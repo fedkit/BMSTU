@@ -1,0 +1,81 @@
+(define (count a s)
+  (define (loop s res)
+    (if (equal? s '())
+        res
+        (if (equal? a (car s))
+            (loop (cdr s) (+ res 1))
+            (loop (cdr s) res)
+        )
+     )
+  )
+  (loop s 0)
+)
+
+
+(define (delete f s)
+  (define (loop s a)
+    (if (equal? s '())
+        a
+        (if (f (car s))
+           (loop (cdr s) a)
+           (loop (cdr s) (append a (list (car s))))
+        ) 
+     )
+  )
+  (loop s '())
+)
+
+
+(define (iterate f x n)
+  (define (loop k res)
+    (if (>= k n)
+       res
+       (loop (+ k 1) (append (list x) (map f res)))
+     )
+  )
+  (if (= n 0)
+    (loop 1 '())
+    (loop 1 (list x))
+  )
+)
+
+
+(define  (intersperse e xs)
+  (define (loop old new)
+    (if (= (length old) 0)
+      (append new old)
+      (loop (cdr old) (append new (list e) (list (car old))))
+    )
+  )
+  (if (equal? xs '())
+    (loop '() '())
+    (loop (cdr xs) (list (car xs)))
+  )
+)
+
+
+(define (any? f xs)
+  (and (not (equal? xs '())) (or (f (car xs)) (any? f (cdr xs))))
+)
+
+
+(define (all? f xs)
+  (or (equal? xs '()) (and (f (car xs)) (all? f (cdr xs))))
+)
+
+
+(define (f x) (+ x 2))
+(define (g x) (* x 3))
+(define (h x) (- x))
+(define (o . xs)
+  (define (loop f xss)
+    (if (equal? xss '())
+      (lambda (a) (f a))
+      (lambda (a) (f ((apply o xss) a)))
+    )
+  )
+  (if (equal? xs '())
+    (lambda (a) (+ a 0))
+    (loop (car xs) (cdr xs))
+  )
+)

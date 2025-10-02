@@ -1,0 +1,110 @@
+(define (my-element? x xs)
+  (and (not (equal? xs '()))
+       (or (equal? (car xs) x)
+           (my-element? x (cdr xs)))))
+
+(define d (list = < >))
+
+(define (find-index a xs)
+  (define (loop xs i)
+    (if (equal? xs '())
+        -1
+        (if (equal? (car xs) a)
+            i
+            (loop (cdr xs) (+ i 1)))))
+  (loop xs 0))
+
+
+(define (compare n1 n2 o)
+  (if (o n1 n2)
+     -1
+     0))
+
+(define (my-and n1 n2)
+   (if (or (= n1 0) (= n2 0))
+      0
+      -1))
+
+(define (my-or n1 n2)
+   (if (and (= n1 0) (= n2 0))
+      0
+      -1))
+
+(define (my-not n)
+   (if (= n 0)
+      -1
+      0))
+
+
+(define (interpret program stack)
+  (define (reader program dictionary name body stack)
+    (if (not (equal? (car program) 'end)) 
+(reader (cdr program) dictionary name 
+(cons (car program) body) stack)
+        (del (cons (list name (reverse body)) dictionary) (cdr program) stack))) 
+  (define (reader2 program dictionary stack)
+    (if (equal? (car program) 'endif) (del dictionary program (cdr stack))
+        (reader2 (cdr program) dictionary stack)))
+  (define (del dictionary xs stack)
+    (if (equal? xs '())
+       stack
+          (cond ((equal? (car xs) 'define)
+                   (reader (cddr xs) dictionary (cadr xs) '() stack))
+                ((assoc (car xs) dictionary)
+                   (del dictionary (cdr xs) (del dictionary 
+(cadr (assoc (car xs) dictionary)) stack)))
+                ((number? (car xs))
+                   (del dictionary (cdr xs) (cons (car xs) stack)))
+                ((equal? (car xs) '+)
+                   (del dictionary (cdr xs) (cons (+ (cadr stack) 
+(car stack)) (cddr stack))))
+                ((equal? (car xs) '-)
+                   (del dictionary (cdr xs) (cons (- (cadr stack) 
+(car stack)) (cddr stack))))
+                ((equal? (car xs) '*)
+                   (del dictionary (cdr xs) (cons (* (cadr stack) 
+(car stack)) (cddr stack))))
+                ((equal? (car xs) '/)
+                   (del dictionary (cdr xs) (cons (quotient (cadr stack) 
+(car stack)) (cddr stack))))
+                ((equal? (car xs) 'mod)
+                   (del dictionary (cdr xs) (cons (remainder (cadr stack) 
+(car stack)) (cddr stack))))
+                ((equal? (car xs) 'neg)
+                   (del dictionary (cdr xs) (cons (* -1 (car stack)) 
+(cdr stack))))
+                ((my-element? (car xs) '(= < >))
+                   (del dictionary (cdr xs) (cons (compare (cadr stack) 
+(car stack) (list-ref d (find-index (car xs) '(= < >)))) (cddr stack))))
+                ((equal? (car xs) 'and)
+                   (del dictionary (cdr xs) (cons 
+(my-and (car stack) (cadr stack)) (cddr stack))))
+               ((equal? (car xs) 'or)
+                  (del dictionary (cdr xs) (cons 
+(my-or (car stack) (cadr stack)) (cddr stack))))
+               ((equal? (car xs) 'not)
+                  (del dictionary (cdr xs) (cons 
+(my-not (car stack)) (cadr stack))))
+               ((equal? (car xs) 'drop)
+                  (del dictionary (cdr xs) (cdr stack)))
+               ((equal? (car xs) 'swap)
+                  (del dictionary (cdr xs) (cons (cadr stack) 
+(cons (car stack) (cddr stack)))))
+               ((equal? (car xs) 'dup)
+                  (del dictionary (cdr xs) (cons (car stack) stack)))
+               ((equal? (car xs) 'over)
+                  (del dictionary (cdr xs) (cons (cadr stack) stack)))
+               ((equal? (car xs) 'rot)
+                  (del dictionary (cdr xs) 
+(cons (caddr stack) (cons (cadr stack) 
+(cons (car stack) (cdddr stack)))))) 
+               ((equal? (car xs) 'depth)
+                  (del dictionary (cdr xs) (cons (length stack)  stack)))
+               ((and (equal? (car xs) 'if) (not (equal? (car stack) 0)))
+                  (del dictionary (cdr xs) (cdr stack)))
+               ((and (equal? (car xs) 'if) (equal? (car stack) 0))
+                  (reader2 (cdr xs) dictionary stack))
+               ((equal? (car xs) 'exit) stack)
+               ((equal? (car xs) 'endif)
+                  (del dictionary (cdr xs) stack)))))
+  (del '() (vector->list program) stack))
